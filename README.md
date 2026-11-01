@@ -2,6 +2,10 @@
 
 Top-down pixel parking garage simulator (Spring Boot), built for the JUG Oberpfalz live-coding session "I Quit BDD Once. This Time the AI Writes the Glue" on 5 November 2026.
 
+[![Session thumbnail](docs/style-reference.jpg)](https://youtube.com/live/4ucE6pxHLMY)
+
+Watch the session on YouTube: https://youtube.com/live/4ucE6pxHLMY
+
 Cars drive in, take a ticket, park, watch their fee tick up, drive to the exit, pay and leave. Every price shown on screen comes from a Java `FeeCalculator`. Right now that's a placeholder (`DummyFeeCalculator`); during the session it gets replaced by a calculator developed test-first from a real garage's price sign.
 
 ## Run it
