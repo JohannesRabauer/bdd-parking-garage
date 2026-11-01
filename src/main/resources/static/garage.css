@@ -1,0 +1,61 @@
+:root {
+    --s: 4;
+    --green: #7cff5b;
+    --green-dim: #2f7a2a;
+}
+
+html, body {
+    margin: 0;
+    height: 100%;
+    background: #050805;
+    overflow: hidden;
+}
+
+#frame {
+    position: relative;
+}
+
+#stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+#garage {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: pointer;
+}
+
+#controls {
+    position: absolute;
+    bottom: calc(var(--s) * 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: calc(var(--s) * 2px);
+}
+
+#controls button {
+    font: bold calc(var(--s) * 3.4px) / 1 "Courier New", ui-monospace, monospace;
+    letter-spacing: 0.05em;
+    color: var(--green);
+    background: #071407;
+    border: calc(var(--s) * 0.75px) solid var(--green-dim);
+    padding: calc(var(--s) * 1.4px) calc(var(--s) * 2.5px);
+    text-shadow: 0 0 calc(var(--s) * 1.5px) #3cff3c;
+    cursor: pointer;
+}
+
+#controls button:hover {
+    border-color: var(--green);
+}
+
+#controls button.active {
+    color: #071407;
+    background: var(--green);
+    border-color: var(--green);
+    text-shadow: none;
+}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BDD Parking Garage</title>
+    <link rel="stylesheet" href="garage.css">
+</head>
+<body>
+<main id="stage">
+    <div id="frame">
+        <canvas id="garage" width="480" height="270" aria-label="Top-down parking garage simulation"></canvas>
+        <nav id="controls" aria-label="Simulation speed">
+            <button type="button" data-speed="0" title="Pause (Space)">II</button>
+            <button type="button" data-speed="1" title="1 simulated minute per second (key 1)">1 MIN/S</button>
+            <button type="button" data-speed="2" title="10 simulated minutes per second (key 2)">10 MIN/S</button>
+            <button type="button" data-speed="3" title="1 simulated hour per second (key 3)">1 H/S</button>
+            <button type="button" id="add-car" title="Send a car to the entry (key C)">+ CAR</button>
+        </nav>
+    </div>
+</main>
+<script type="module" src="js/garage.js"></script>
+</body>
+</html>
