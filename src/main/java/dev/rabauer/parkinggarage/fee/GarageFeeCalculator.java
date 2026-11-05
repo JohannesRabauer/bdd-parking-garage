@@ -29,6 +29,7 @@ public class GarageFeeCalculator implements FeeCalculator {
     static final Money SECOND_HALF_HOUR_RATE = Money.euros("0.80");
     static final Money LONG_STAY_RATE = Money.euros("1.10");
     static final Money DAILY_FEE = Money.euros("14.00");
+    static final String MOTORBIKE_FACTOR = "0.5";
     static final Money NIGHT_FLAT_FEE = Money.euros("7.00");
 
     static final LocalTime DAY_START = LocalTime.of(7, 0);
@@ -50,6 +51,21 @@ public class GarageFeeCalculator implements FeeCalculator {
         }
         LocalDateTime partialEntry = entry.plusDays(fullDays);
         return total.plus(feeForPartialDay(partialEntry, exit));
+    }
+
+    /** Motorbikes pay half of the car fee: the price signs only list car prices. */
+    @Override
+    public Money calculate(VehicleType vehicle, LocalDateTime entry, LocalDateTime exit) {
+        return forVehicle(vehicle, calculate(entry, exit));
+    }
+
+    @Override
+    public Money calculateWithoutTicket(VehicleType vehicle, LocalDateTime exit) {
+        return forVehicle(vehicle, calculateWithoutTicket(exit));
+    }
+
+    private static Money forVehicle(VehicleType vehicle, Money carFee) {
+        return vehicle == VehicleType.MOTORBIKE ? carFee.times(MOTORBIKE_FACTOR) : carFee;
     }
 
     /** Without a ticket the entry time is unknown, so at least the daily fee is charged. */

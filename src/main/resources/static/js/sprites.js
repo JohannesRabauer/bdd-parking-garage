@@ -38,6 +38,22 @@ const CAR = [
 
 export const CAR_L = 20;
 
+// 6x10, facing up: headlight, handlebar, tank, rider, seat, tail light.
+const MOTORBIKE = [
+    '..kk..',
+    '.khhk.',
+    'kkkkkk',
+    '.kllk.',
+    '.kbbk.',
+    '.krrk.',
+    '.krrk.',
+    '.kddk.',
+    '.ktbk.',
+    '..kk..',
+];
+
+export const MOTORBIKE_L = 10;
+
 function paint(pattern, palette) {
     const c = document.createElement('canvas');
     c.width = pattern[0].length;
@@ -75,6 +91,19 @@ export function buildCarSprites() {
         const up = paint(CAR, {
             k: '#141418', b: base, l: light, d: dark,
             w: '#24303c', g: '#8fc0e0', h: '#fff4a8', t: '#ff2a2a',
+        });
+        sprites[name] = { up, right: rotated(up, 1), down: rotated(up, 2), left: rotated(up, 3) };
+    }
+    return sprites;
+}
+
+/** { colorName: { up, right, down, left } } */
+export function buildMotorbikeSprites() {
+    const sprites = {};
+    for (const [name, [base, light, dark]] of Object.entries(CAR_COLORS)) {
+        const up = paint(MOTORBIKE, {
+            k: '#141418', b: base, l: light, d: dark,
+            r: '#3a3f4a', h: '#fff4a8', t: '#ff2a2a',
         });
         sprites[name] = { up, right: rotated(up, 1), down: rotated(up, 2), left: rotated(up, 3) };
     }

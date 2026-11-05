@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import dev.rabauer.parkinggarage.fee.FeeCalculator;
+import dev.rabauer.parkinggarage.fee.VehicleType;
 
 /**
  * Stateless: the simulated clock lives in the browser, which sends both timestamps with every request.
@@ -33,8 +34,9 @@ public class FeeController {
     @GetMapping("/fee")
     public FeeResponse currentFee(
             @RequestParam @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime entry,
-            @RequestParam @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime at) {
-        return FeeResponse.of(entry, at, feeCalculator.calculate(entry, at));
+            @RequestParam @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime at,
+            @RequestParam(defaultValue = "CAR") VehicleType vehicle) {
+        return FeeResponse.of(entry, at, feeCalculator.calculate(vehicle, entry, at));
     }
 
     /** Final fee, paid at the exit barrier. Without an {@code entry} the ticket was lost. */
@@ -43,11 +45,13 @@ public class FeeController {
         if (request.exit() == null) {
             throw new IllegalArgumentException("exit is required");
         }
+        VehicleType vehicle = request.vehicle() == null ? VehicleType.CAR : request.vehicle();
         if (request.entry() == null) {
-            return FeeResponse.of(null, request.exit(), feeCalculator.calculateWithoutTicket(request.exit()));
+            return FeeResponse.of(null, request.exit(),
+                    feeCalculator.calculateWithoutTicket(vehicle, request.exit()));
         }
         return FeeResponse.of(request.entry(), request.exit(),
-                feeCalculator.calculate(request.entry(), request.exit()));
+                feeCalculator.calculate(vehicle, request.entry(), request.exit()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

@@ -25,4 +25,20 @@ public interface FeeCalculator {
     default Money calculateWithoutTicket(LocalDateTime exit) {
         throw new UnsupportedOperationException("lost-ticket fee not implemented yet");
     }
+
+    /** Fee for a stay of the given vehicle type. Cars pay the standard fee. */
+    default Money calculate(VehicleType vehicle, LocalDateTime entry, LocalDateTime exit) {
+        if (vehicle == VehicleType.CAR) {
+            return calculate(entry, exit);
+        }
+        throw new UnsupportedOperationException(vehicle + " fees not implemented yet");
+    }
+
+    /** Fee for a vehicle of the given type that lost its ticket. Cars pay the standard fee. */
+    default Money calculateWithoutTicket(VehicleType vehicle, LocalDateTime exit) {
+        if (vehicle == VehicleType.CAR) {
+            return calculateWithoutTicket(exit);
+        }
+        throw new UnsupportedOperationException(vehicle + " fees not implemented yet");
+    }
 }

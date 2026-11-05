@@ -24,6 +24,11 @@ public record Money(BigDecimal amount) implements Comparable<Money> {
         return new Money(amount.add(other.amount));
     }
 
+    /** Multiplies by a factor, rounded to cents. */
+    public Money times(String factor) {
+        return new Money(amount.multiply(new BigDecimal(factor)));
+    }
+
     public Money min(Money other) {
         return compareTo(other) <= 0 ? this : other;
     }

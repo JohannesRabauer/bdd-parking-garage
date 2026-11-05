@@ -1,5 +1,5 @@
 import { drawText, drawOutlinedText, drawGlowText, textWidth } from './font.js';
-import { buildCarSprites, CAR_COLORS, CAR_L, COIN } from './sprites.js';
+import { buildCarSprites, buildMotorbikeSprites, CAR_COLORS, CAR_L, MOTORBIKE_L, COIN } from './sprites.js';
 import { fetchFee, checkout } from './api.js';
 
 // ---------------------------------------------------------------------------------------------
@@ -46,6 +46,8 @@ const MAX_ARRIVAL_RATE = Math.max(...ARRIVALS_PER_HOUR);
 // Roughly how many cars per simulated day lose their ticket; they pay the lost-ticket fee at the exit.
 const LOST_TICKETS_PER_DAY = 10;
 const LOST_TICKET_PROBABILITY = LOST_TICKETS_PER_DAY / ARRIVALS_PER_HOUR.reduce((a, b) => a + b, 0);
+// Share of the arriving vehicles that are motorbikes (they pay a different fee).
+const MOTORBIKE_SHARE = 0.2;
 const MAX_QUEUE = 3;
 // The exit handles roughly one car per second, so only a few cars head for it at once;
 // the others stay parked a little longer (and keep paying) instead of jamming the aisles.
@@ -108,14 +110,16 @@ ROW_TOPS.forEach((top, row) => {
 });
 
 const carSprites = buildCarSprites();
+const motorbikeSprites = buildMotorbikeSprites();
 const colorNames = Object.keys(CAR_COLORS);
 
 // ---------------------------------------------------------------------------------------------
 // Cars
 // ---------------------------------------------------------------------------------------------
-function newCar(bay, stayMs) {
+function newCar(bay, stayMs, vehicle = 'CAR') {
     const car = {
         id: state.nextId++,
+        vehicle,
         color: colorNames[Math.floor(Math.random() * colorNames.length)],
         x: SPAWN.x, y: SPAWN.y, mx: 0, my: 1, face: 'down',
         bay, stayMs,
@@ -166,7 +170,8 @@ function arrive() {
         state.turnedAway++;
         return;
     }
-    state.queue.push({ stayMs: sampleStayMinutes() * 60000 });
+    const vehicle = Math.random() < MOTORBIKE_SHARE ? 'MOTORBIKE' : 'CAR';
+    state.queue.push({ stayMs: sampleStayMinutes() * 60000, vehicle });
 }
 
 function spawnClear() {
@@ -177,15 +182,15 @@ function trySpawn() {
     if (!state.queue.length || !spawnClear()) return;
     const free = freeBays();
     if (!free.length) return;
-    const { stayMs } = state.queue.shift();
-    newCar(free[Math.floor(Math.random() * free.length)], stayMs);
+    const { stayMs, vehicle } = state.queue.shift();
+    newCar(free[Math.floor(Math.random() * free.length)], stayMs, vehicle);
 }
 
 /** Some cars are already parked when the page opens, so the stream starts busy. */
 function prefill(count) {
     const free = freeBays().sort(() => Math.random() - 0.5).slice(0, count);
     for (const bay of free) {
-        const car = newCar(bay, 0);
+        const car = newCar(bay, 0, Math.random() < MOTORBIKE_SHARE ? 'MOTORBIKE' : 'CAR');
         const parkedFor = randomBetween(10, 600) * 60000;
         car.x = bay.x;
         car.y = bay.y;
@@ -311,7 +316,7 @@ function reach(car, wp) {
 
 function pay(car) {
     // A lost ticket means the entry time is unknown: the backend then charges the lost-ticket fee.
-    checkout(car.ticketLost ? null : iso(car.entryMs), iso(car.exitMs))
+    checkout(car.ticketLost ? null : iso(car.entryMs), iso(car.exitMs), car.vehicle)
         .then(receipt => {
             state.backendError = false;
             car.paid = receipt;
@@ -351,7 +356,7 @@ function pollFees() {
         const at = state.simMs;
         car.inflight = true;
         car.lastFetchWall = wall;
-        fetchFee(iso(car.entryMs), iso(at))
+        fetchFee(iso(car.entryMs), iso(at), car.vehicle)
             .then(response => {
                 state.backendError = false;
                 car.lastFetchSim = at;
@@ -571,7 +576,7 @@ function drawBarrierArm(pivotX, y, length, towardsLeft, open) {
 }
 
 function spriteOf(car) {
-    return carSprites[car.color][car.face];
+    return (car.vehicle === 'MOTORBIKE' ? motorbikeSprites : carSprites)[car.color][car.face];
 }
 
 function drawCar(car) {
@@ -626,8 +631,8 @@ function drawNight(night) {
         for (let d = 1; d <= 10; d++) {
             ctx.fillStyle = `rgba(255, 240, 170, ${0.32 * night * (1 - d / 11)})`;
             const width = 8 + Math.floor(d / 2) * 2;
-            const cx = Math.round(car.x + fx * (CAR_L / 2 + d));
-            const cy = Math.round(car.y + fy * (CAR_L / 2 + d));
+            const cx = Math.round(car.x + fx * ((car.vehicle === 'MOTORBIKE' ? MOTORBIKE_L : CAR_L) / 2 + d));
+            const cy = Math.round(car.y + fy * ((car.vehicle === 'MOTORBIKE' ? MOTORBIKE_L : CAR_L) / 2 + d));
             if (fx) ctx.fillRect(cx, cy - width / 2, 1, width);
             else ctx.fillRect(cx - width / 2, cy, width, 1);
         }
@@ -728,7 +733,7 @@ function drawInfoPanel() {
         drawText(ctx, 'FEES: JAVA FEECALCULATOR VIA /API/FEE', x + 4, y + 20, '#3f9a36');
         return;
     }
-    drawText(ctx, `CAR #${car.id} ${car.color} - ${car.state}`, x + 4, y + 4, green);
+    drawText(ctx, `${car.vehicle} #${car.id} ${car.color} - ${car.state}`, x + 4, y + 4, green);
     if (car.entryMs === null) {
         drawText(ctx, 'NO TICKET YET', x + 4, y + 12, green);
         return;

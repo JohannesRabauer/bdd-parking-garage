@@ -58,9 +58,10 @@ The dummy rules, so you can tell them apart from the real ones: first 30 minutes
 The simulated clock lives in the browser. The backend keeps no time state; every request carries both timestamps (ISO local date-time, no zone).
 
 ```
-GET  /api/fee?entry=2026-11-05T09:00:00&at=2026-11-05T10:15:00     running fee of a parked car
+GET  /api/fee?entry=2026-11-05T09:00:00&at=2026-11-05T10:15:00     running fee of a parked car (optional &vehicle=MOTORBIKE)
 POST /api/checkout  {"entry": "2026-11-05T09:00:00", "exit": "2026-11-05T09:45:00"}   final fee at the exit barrier
 POST /api/checkout  {"exit": "2026-11-05T09:45:00"}                                   no "entry": ticket lost, lost-ticket fee
+                                                                               (optional "vehicle": "MOTORBIKE" pays half)
 ```
 
 Both return:
