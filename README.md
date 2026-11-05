@@ -60,6 +60,7 @@ The simulated clock lives in the browser. The backend keeps no time state; every
 ```
 GET  /api/fee?entry=2026-11-05T09:00:00&at=2026-11-05T10:15:00     running fee of a parked car
 POST /api/checkout  {"entry": "2026-11-05T09:00:00", "exit": "2026-11-05T09:45:00"}   final fee at the exit barrier
+POST /api/checkout  {"exit": "2026-11-05T09:45:00"}                                   no "entry": ticket lost, lost-ticket fee
 ```
 
 Both return:

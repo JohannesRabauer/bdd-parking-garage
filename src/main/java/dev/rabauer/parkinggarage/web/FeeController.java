@@ -37,11 +37,14 @@ public class FeeController {
         return FeeResponse.of(entry, at, feeCalculator.calculate(entry, at));
     }
 
-    /** Final fee, paid at the exit barrier. */
+    /** Final fee, paid at the exit barrier. Without an {@code entry} the ticket was lost. */
     @PostMapping("/checkout")
     public FeeResponse checkout(@RequestBody CheckoutRequest request) {
-        if (request.entry() == null || request.exit() == null) {
-            throw new IllegalArgumentException("entry and exit are required");
+        if (request.exit() == null) {
+            throw new IllegalArgumentException("exit is required");
+        }
+        if (request.entry() == null) {
+            return FeeResponse.of(null, request.exit(), feeCalculator.calculateWithoutTicket(request.exit()));
         }
         return FeeResponse.of(request.entry(), request.exit(),
                 feeCalculator.calculate(request.entry(), request.exit()));

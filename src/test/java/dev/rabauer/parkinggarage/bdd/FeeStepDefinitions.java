@@ -30,6 +30,16 @@ public class FeeStepDefinitions {
         fee = calculator.calculate(entry, LocalDateTime.parse(time, FORMAT));
     }
 
+    @Given("a car has lost its parking ticket")
+    public void aCarHasLostItsParkingTicket() {
+        entry = null;
+    }
+
+    @When("the car leaves the garage at {string} without a ticket")
+    public void theCarLeavesTheGarageWithoutATicket(String time) {
+        fee = calculator.calculateWithoutTicket(LocalDateTime.parse(time, FORMAT));
+    }
+
     @Then("the parking fee is {bigdecimal} EUR")
     public void theParkingFeeIs(java.math.BigDecimal expected) {
         assertEquals(new Money(expected), fee);

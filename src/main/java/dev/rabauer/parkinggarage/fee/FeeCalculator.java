@@ -17,4 +17,12 @@ public interface FeeCalculator {
      * @return the fee for this stay
      */
     Money calculate(LocalDateTime entry, LocalDateTime exit);
+
+    /**
+     * @param exit when the car pays at the exit barrier after losing its ticket (entry time unknown)
+     * @return the fee for a stay without a ticket
+     */
+    default Money calculateWithoutTicket(LocalDateTime exit) {
+        throw new UnsupportedOperationException("lost-ticket fee not implemented yet");
+    }
 }

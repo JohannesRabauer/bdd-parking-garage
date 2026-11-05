@@ -9,6 +9,7 @@ export async function fetchFee(entry, at) {
     return response.json();
 }
 
+// entry === null means the ticket was lost: the backend then charges the lost-ticket fee.
 export async function checkout(entry, exit) {
     const response = await fetch('/api/checkout', {
         method: 'POST',

@@ -43,6 +43,9 @@ const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 // cars per simulated hour, by hour of day
 const ARRIVALS_PER_HOUR = [0.5, 0.4, 0.3, 0.3, 0.4, 0.8, 2, 5, 7, 6, 5, 5, 5, 5, 5, 5, 6, 6, 4, 3, 2, 1.5, 1, 0.7];
 const MAX_ARRIVAL_RATE = Math.max(...ARRIVALS_PER_HOUR);
+// Roughly how many cars per simulated day lose their ticket; they pay the lost-ticket fee at the exit.
+const LOST_TICKETS_PER_DAY = 10;
+const LOST_TICKET_PROBABILITY = LOST_TICKETS_PER_DAY / ARRIVALS_PER_HOUR.reduce((a, b) => a + b, 0);
 const MAX_QUEUE = 3;
 // The exit handles roughly one car per second, so only a few cars head for it at once;
 // the others stay parked a little longer (and keep paying) instead of jamming the aisles.
@@ -122,6 +125,7 @@ function newCar(bay, stayMs) {
         fee: null, feeFlashUntil: 0, feeFlashColor: null,
         inflight: false, lastFetchSim: null, lastFetchWall: 0,
         waitUntil: 0, awaitingPayment: false, paid: null,
+        willLoseTicket: Math.random() < LOST_TICKET_PROBABILITY, ticketLost: false,
     };
     bay.carId = car.id;
     state.cars.push(car);
@@ -245,6 +249,11 @@ function updateCar(car, dt) {
     if (car.state === 'parked') {
         if (state.simMs >= car.departAt && leavingCount() < MAX_LEAVING && aisleClearFor(car)) {
             car.state = 'leaving';
+            if (car.willLoseTicket) {
+                car.ticketLost = true;
+                car.fee = null;
+                popup(car.x, car.y - 12, ['TICKET LOST!'], '#ff6060', 1.6);
+            }
             car.path = exitPath(car.bay);
         } else {
             return;
@@ -301,7 +310,8 @@ function reach(car, wp) {
 }
 
 function pay(car) {
-    checkout(iso(car.entryMs), iso(car.exitMs))
+    // A lost ticket means the entry time is unknown: the backend then charges the lost-ticket fee.
+    checkout(car.ticketLost ? null : iso(car.entryMs), iso(car.exitMs))
         .then(receipt => {
             state.backendError = false;
             car.paid = receipt;
@@ -312,7 +322,8 @@ function pay(car) {
             state.paidCount++;
             state.exitBarrier = { openAt: state.rt + pause() * 0.7, closeAt: state.rt + pause() + 0.6 };
             popup(LANE_OUT_X - 14, EXIT_STOP_Y - 14,
-                [`PAID ${receipt.display} EUR`, `${clock(car.entryMs)}-${clock(car.exitMs)}`],
+                [`PAID ${receipt.display} EUR`,
+                    car.ticketLost ? 'TICKET LOST' : `${clock(car.entryMs)}-${clock(car.exitMs)}`],
                 '#ffe14a', 2.2, true);
         })
         .catch(() => {
@@ -335,7 +346,7 @@ function popup(x, y, lines, color, ttl, coin = false) {
 function pollFees() {
     const wall = performance.now();
     for (const car of state.cars) {
-        if (car.entryMs === null || car.paid || car.state === 'paying' || car.state === 'gone') continue;
+        if (car.entryMs === null || car.ticketLost || car.paid || car.state === 'paying' || car.state === 'gone') continue;
         if (car.inflight || car.lastFetchSim === state.simMs || wall - car.lastFetchWall < 300) continue;
         const at = state.simMs;
         car.inflight = true;
@@ -344,7 +355,7 @@ function pollFees() {
             .then(response => {
                 state.backendError = false;
                 car.lastFetchSim = at;
-                if (car.paid) return;
+                if (car.paid || car.ticketLost) return;
                 if (car.fee !== null && response.display !== car.fee) {
                     car.feeFlashUntil = performance.now() + 500;
                     car.feeFlashColor = Number(response.display) > Number(car.fee) ? '#ffffff' : '#4ff0ff';
@@ -720,6 +731,11 @@ function drawInfoPanel() {
     drawText(ctx, `CAR #${car.id} ${car.color} - ${car.state}`, x + 4, y + 4, green);
     if (car.entryMs === null) {
         drawText(ctx, 'NO TICKET YET', x + 4, y + 12, green);
+        return;
+    }
+    if (car.ticketLost) {
+        drawText(ctx, 'TICKET LOST - MIN. DAILY FEE', x + 4, y + 12, '#ff6060');
+        drawText(ctx, `FEE ${car.fee ?? '...'} EUR${car.paid ? ' PAID' : ''}`, x + 120, y + 20, '#ffe14a');
         return;
     }
     const until = car.exitMs ?? state.simMs;

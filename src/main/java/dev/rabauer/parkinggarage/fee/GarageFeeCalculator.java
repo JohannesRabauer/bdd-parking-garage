@@ -52,6 +52,12 @@ public class GarageFeeCalculator implements FeeCalculator {
         return total.plus(feeForPartialDay(partialEntry, exit));
     }
 
+    /** Without a ticket the entry time is unknown, so at least the daily fee is charged. */
+    @Override
+    public Money calculateWithoutTicket(LocalDateTime exit) {
+        return DAILY_FEE;
+    }
+
     private static Money feeForPartialDay(LocalDateTime entry, LocalDateTime exit) {
         LocalTime time = entry.toLocalTime();
         boolean daytime = !time.isBefore(DAY_START) && time.isBefore(NIGHT_START);
