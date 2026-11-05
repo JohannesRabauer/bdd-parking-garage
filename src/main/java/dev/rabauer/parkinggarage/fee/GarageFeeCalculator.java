@@ -1,23 +1,24 @@
 package dev.rabauer.parkinggarage.fee;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
- * The real garage's daytime tariff (07:00 - 19:00), taken from its price sign. Every started
- * 30 minutes is charged:
+ * The real garage's tariffs, taken from its price signs. In all of them every started 30 minutes
+ * is charged: the 1st and 2nd at 0.60 EUR, the 3rd at 0.80 EUR, the following ones at 1.10 EUR.
  * <ul>
- *     <li>1st and 2nd (stay up to 1 hour): 0.60 EUR each</li>
- *     <li>3rd (stay over 1 hour to 1.5 hours): 0.80 EUR</li>
- *     <li>4th to 13th (stay over 1.5 hours to 6.5 hours): 1.10 EUR each</li>
+ *     <li><b>Weekday daytime (07:00 - 19:00):</b> the slots up to 6.5 hours are charged as above;
+ *     beyond that the daily fee of 14.00 EUR applies.</li>
+ *     <li><b>Night (19:00 - 07:00) and Sundays/public holidays (07:00 - 19:00):</b> the slots up to
+ *     3.5 hours are charged as above; beyond that 7.00 EUR flat. Staying past the end of that period
+ *     (07:00 resp. 19:00) adds 1.10 EUR per started 30 minutes, at most 14.00 EUR per 24 hours.</li>
  * </ul>
- * Beyond 6.5 hours the daily fee of 14.00 EUR applies instead (up to 24 hours).
- * <p>
- * Not covered by the sign yet, so not modelled: night pricing, and stays longer than 24 hours
- * (each full 24 hours is simply charged the daily fee again).
+ * The tariff is chosen by the entry time. Each full 24 hours is simply charged again.
  */
 @Component
 @Primary
@@ -28,6 +29,10 @@ public class GarageFeeCalculator implements FeeCalculator {
     static final Money SECOND_HALF_HOUR_RATE = Money.euros("0.80");
     static final Money LONG_STAY_RATE = Money.euros("1.10");
     static final Money DAILY_FEE = Money.euros("14.00");
+    static final Money NIGHT_FLAT_FEE = Money.euros("7.00");
+
+    static final LocalTime DAY_START = LocalTime.of(7, 0);
+    static final LocalTime NIGHT_START = LocalTime.of(19, 0);
 
     private static final int FIRST_HOUR_SLOTS = 2;
     private static final int SLOTS_UP_TO_1_5_HOURS = 3;
@@ -43,16 +48,55 @@ public class GarageFeeCalculator implements FeeCalculator {
         for (long day = 0; day < fullDays; day++) {
             total = total.plus(DAILY_FEE);
         }
-        return total.plus(feeForPartialDay(stay.minusDays(fullDays)));
+        LocalDateTime partialEntry = entry.plusDays(fullDays);
+        return total.plus(feeForPartialDay(partialEntry, exit));
     }
 
-    private static Money feeForPartialDay(Duration stay) {
-        long startedSlots = (stay.toSeconds() + SLOT.toSeconds() - 1) / SLOT.toSeconds();
+    private static Money feeForPartialDay(LocalDateTime entry, LocalDateTime exit) {
+        LocalTime time = entry.toLocalTime();
+        boolean daytime = !time.isBefore(DAY_START) && time.isBefore(NIGHT_START);
+        if (daytime && !PublicHolidays.isSundayOrHoliday(entry.toLocalDate())) {
+            return slotsFee(Duration.between(entry, exit)).min(DAILY_FEE);
+        }
+        return nightStyleFee(entry, exit, endOfPeriod(entry, daytime));
+    }
+
+    /** Night tariff, also used on Sundays and holidays during the day: it runs until {@code periodEnd}. */
+    private static Money nightStyleFee(LocalDateTime entry, LocalDateTime exit, LocalDateTime periodEnd) {
+        LocalDateTime insideEnd = exit.isBefore(periodEnd) ? exit : periodEnd;
+        Money inside = slotsFee(Duration.between(entry, insideEnd)).min(NIGHT_FLAT_FEE);
+
+        Money after = Money.ZERO;
+        if (exit.isAfter(periodEnd)) {
+            long slots = startedSlots(Duration.between(periodEnd, exit));
+            for (long slot = 0; slot < slots; slot++) {
+                after = after.plus(LONG_STAY_RATE);
+            }
+        }
+        return inside.plus(after).min(DAILY_FEE);
+    }
+
+    private static LocalDateTime endOfPeriod(LocalDateTime entry, boolean daytime) {
+        LocalDate date = entry.toLocalDate();
+        if (daytime) {
+            return date.atTime(NIGHT_START);
+        }
+        return entry.toLocalTime().isBefore(DAY_START)
+                ? date.atTime(DAY_START)
+                : date.plusDays(1).atTime(DAY_START);
+    }
+
+    private static Money slotsFee(Duration stay) {
+        long slots = startedSlots(stay);
         Money total = Money.ZERO;
-        for (long slot = 1; slot <= startedSlots; slot++) {
+        for (long slot = 1; slot <= slots; slot++) {
             total = total.plus(rateOfSlot(slot));
         }
-        return total.min(DAILY_FEE);
+        return total;
+    }
+
+    private static long startedSlots(Duration stay) {
+        return (stay.toSeconds() + SLOT.toSeconds() - 1) / SLOT.toSeconds();
     }
 
     private static Money rateOfSlot(long slot) {
