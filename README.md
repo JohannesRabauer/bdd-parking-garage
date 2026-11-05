@@ -34,7 +34,7 @@ Controls (buttons at the bottom or keyboard):
 ## Where the fee logic lives
 
 ```
-src/main/java/com/github/johannesrabauer/parkinggarage/
+src/main/java/dev/rabauer/parkinggarage/
 ├── fee/
 │   ├── FeeCalculator.java        <- the interface the simulator depends on
 │   ├── DummyFeeCalculator.java   <- placeholder rules (the only @Component implementation)

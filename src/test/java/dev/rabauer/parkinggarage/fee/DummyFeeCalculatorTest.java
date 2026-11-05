@@ -1,4 +1,4 @@
-package com.github.johannesrabauer.parkinggarage.fee;
+package dev.rabauer.parkinggarage.fee;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;

@@ -1,4 +1,4 @@
-package com.github.johannesrabauer.parkinggarage.web;
+package dev.rabauer.parkinggarage.web;
 
 import java.time.LocalDateTime;
 

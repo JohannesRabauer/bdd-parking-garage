@@ -1,4 +1,4 @@
-package com.github.johannesrabauer.parkinggarage.web;
+package dev.rabauer.parkinggarage.web;
 
 import java.time.LocalDateTime;
 
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.github.johannesrabauer.parkinggarage.fee.FeeCalculator;
+import dev.rabauer.parkinggarage.fee.FeeCalculator;
 
 /**
  * Stateless: the simulated clock lives in the browser, which sends both timestamps with every request.

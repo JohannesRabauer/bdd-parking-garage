@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.github.johannesrabauer</groupId>
+    <groupId>dev.rabauer</groupId>
     <artifactId>bdd-parking-garage</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>bdd-parking-garage</name>

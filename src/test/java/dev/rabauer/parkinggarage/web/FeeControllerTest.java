@@ -1,4 +1,4 @@
-package com.github.johannesrabauer.parkinggarage.web;
+package dev.rabauer.parkinggarage.web;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.github.johannesrabauer.parkinggarage.fee.DummyFeeCalculator;
+import dev.rabauer.parkinggarage.fee.DummyFeeCalculator;
 
 @WebMvcTest(FeeController.class)
 @Import(DummyFeeCalculator.class)

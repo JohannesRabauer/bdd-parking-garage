@@ -1,4 +1,4 @@
-package com.github.johannesrabauer.parkinggarage.fee;
+package dev.rabauer.parkinggarage.fee;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
