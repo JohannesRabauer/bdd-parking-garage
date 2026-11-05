@@ -1,5 +1,6 @@
 package dev.rabauer.parkinggarage.bdd;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -18,6 +19,7 @@ public class FeeStepDefinitions {
 
     private final FeeCalculator calculator = new GarageFeeCalculator();
     private LocalDateTime entry;
+    private LocalDateTime now;
     private Money fee;
 
     @Given("a car enters the garage at {string}")
@@ -27,7 +29,8 @@ public class FeeStepDefinitions {
 
     @When("the car leaves the garage at {string}")
     public void theCarLeavesTheGarageAt(String time) {
-        fee = calculator.calculate(entry, LocalDateTime.parse(time, FORMAT));
+        LocalDateTime exit = LocalDateTime.parse(time, FORMAT);
+        fee = entry == null ? calculator.calculateWithoutTicket(exit) : calculator.calculate(entry, exit);
     }
 
     @Given("a car has lost its parking ticket")
@@ -35,13 +38,18 @@ public class FeeStepDefinitions {
         entry = null;
     }
 
-    @When("the car leaves the garage at {string} without a ticket")
-    public void theCarLeavesTheGarageWithoutATicket(String time) {
-        fee = calculator.calculateWithoutTicket(LocalDateTime.parse(time, FORMAT));
+    @When("the time is {string}")
+    public void theTimeIs(String time) {
+        now = LocalDateTime.parse(time, FORMAT);
+    }
+
+    @Then("the current fee is {bigdecimal} EUR")
+    public void theCurrentFeeIs(BigDecimal expected) {
+        assertEquals(new Money(expected), calculator.calculate(entry, now));
     }
 
     @Then("the parking fee is {bigdecimal} EUR")
-    public void theParkingFeeIs(java.math.BigDecimal expected) {
+    public void theParkingFeeIs(BigDecimal expected) {
         assertEquals(new Money(expected), fee);
     }
 }

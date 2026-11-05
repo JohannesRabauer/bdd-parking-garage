@@ -5,7 +5,7 @@ Feature: Lost parking ticket (Parkscheinverlust)
 
   Scenario Outline: A car without a ticket pays at least the daily fee
     Given a car has lost its parking ticket
-    When the car leaves the garage at "<exit>" without a ticket
+    When the car leaves the garage at "<exit>"
     Then the parking fee is 14.00 EUR
 
     Examples:
